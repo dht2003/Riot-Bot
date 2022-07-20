@@ -2,20 +2,23 @@ const { entersState, joinVoiceChannel, VoiceConnectionStatus, EndBehaviorType } 
 const { createWriteStream } = require('node:fs');
 const prism = require('prism-media');
 const { pipeline } = require('node:stream');
-const { Client, Intents, MessageAttachment, Collection } = require('discord.js');
+const { Client, Intents, MessageAttachment, Collection, User } = require('discord.js');
 const ffmpeg = require('ffmpeg');
 const sleep = require('util').promisify(setTimeout);
 const fs = require('fs');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const path = require('node:path');
 
+let sentence_count = 0
 
 module.exports = {
     data: new SlashCommandBuilder()
-    .setName('record')
+    .setName('chat_restriction')
     .setDescription('records user')
-    .addUserOption(option => option.setName('target').setDescription('Select a user').setRequired(true)),
+    .addUserOption(option => option.setName('target').setDescription('Select a user').setRequired(true))
+    .addIntegerOption(option => option.setName('sentence_restriction').setDescription('Number of sentences that user can say').setRequired(true)),
     async execute(message) {
+        const sentence_restriction = message.options.getInteger('sentence_restriction');
         const user = message.options.getUser('target');
         const member = message.guild.members.cache.get(user.id);
         const voiceChannel = member.voice.channel;
@@ -42,57 +45,26 @@ module.exports = {
 
             /* When user speaks in vc*/
             receiver.speaking.on('start', (userId) => {
-                createListeningStream(receiver, userId, message.client.users.cache.get(userId));
+                createListeningStream(connection,receiver, message.client.users.cache.get(userId),userId,sentence_restriction);
             });
 
             /* Return success message */
-            return message.channel.send(`🎙️ I am now recording ${voiceChannel.name}`);
+            return message.channel.send(`Chat restricting now}`);
         }
         else if (connection) {
-            /* Send waiting message */
-            const msg = await message.channel.send("Please wait while I am preparing your recording...")
-            /* wait for 5 seconds */
-            await sleep(5000)
-
-            /* disconnect the bot from voice channel */
-            connection.destroy();
-
-            /* Remove voice state from collection */
-            message.client.voiceManager.delete(message.channel.guild.id)
-            
-            const recordingsPath = path.join(__dirname, 'recordings');
-            const filename = path.join(recordingsPath, `${user.id}`);
-
-            /* Create ffmpeg command to convert pcm to mp3 */
-            const process = new ffmpeg(`${filename}.pcm`);
-            process.then(function (audio) {
-                audio.fnExtractSoundToMP3(`${filename}.mp3`, async function (error, file) {
-                    //edit message with recording as attachment
-                    await msg.edit({
-                        content: `🔉 Here is your recording!`,
-                        files: [new MessageAttachment(`${filename}.mp3`, 'recording.mp3')]
-                    });
-
-                    //delete both files
-                    fs.unlinkSync(`${filename}.pcm`)
-                });
-            }, function (err) {
-                /* handle error by sending error message to discord */
-                return msg.edit(`❌ An error occurred while processing your recording: ${err.message}`);
-            });
+            const msg = await message.channel.send("Already chat restricting a user")
         }
     }
 }
 
 
-function createListeningStream(receiver, userId, user) {
+function createListeningStream(connection,receiver, user, userId, sentence_restriction) {
     const opusStream = receiver.subscribe(userId, {
         end: {
             behavior: EndBehaviorType.AfterSilence,
             duration: 100,
         },
     });
-
     const oggStream = new prism.opus.OggLogicalBitstream({
         opusHead: new prism.opus.OpusHead({
             channelCount: 2,
@@ -102,7 +74,12 @@ function createListeningStream(receiver, userId, user) {
             maxPackets: 10,
         },
     });
-
+    sentence_count++;
+    if (sentence_count >= sentence_restriction) {
+        console.log(`Muted ${user.id}`);
+        user.voice.setMute(true);
+        connection.destroy();
+    }
     const recordingsPath = path.join(__dirname, 'recordings');
     const filename = path.join(recordingsPath, `${user.id}.pcm`);
 
@@ -116,4 +93,5 @@ function createListeningStream(receiver, userId, user) {
             console.log(`✅ Recorded ${filename}`);
         }
     });
+    console.log(sentence_count);
 }
