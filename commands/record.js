@@ -68,7 +68,7 @@ module.exports = {
             process.then(function (audio) {
                 audio.fnExtractSoundToMP3(`${filename}.mp3`, async function (error, file) {
                     //edit message with recording as attachment
-                    await msg.edit({
+                    await  message.channel.send({
                         content: `🔉 Here is your recording!`,
                         files: [new MessageAttachment(`${filename}.mp3`, 'recording.mp3')]
                     });
