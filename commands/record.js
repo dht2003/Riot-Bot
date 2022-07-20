@@ -25,7 +25,7 @@ module.exports = {
         /* If the bot is not in voice channel */
         if (!connection) {
             /* if user is not in any voice channel then return the error message */
-            if(!voiceChannel) return message.channel.send("You must be in a voice channel to use this command!")
+            if(!voiceChannel) return message.reply("You must be in a voice channel to use this command!")
 
             /* Join voice channel*/
             connection = joinVoiceChannel({
@@ -42,15 +42,15 @@ module.exports = {
 
             /* When user speaks in vc*/
             receiver.speaking.on('start', (userId) => {
-                createListeningStream(receiver, userId, message.client.users.cache.get(userId));
+                createListeningStream(receiver, userId, member);
             });
 
             /* Return success message */
-            return message.channel.send(`🎙️ I am now recording ${voiceChannel.name}`);
+            return message.reply(`🎙️ I am now recording ${voiceChannel.name}`);
         }
         else if (connection) {
             /* Send waiting message */
-            const msg = await message.channel.send("Please wait while I am preparing your recording...")
+            const msg = await message.reply("Please wait while I am preparing your recording...")
             /* wait for 5 seconds */
             await sleep(5000)
 

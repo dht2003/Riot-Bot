@@ -16,7 +16,7 @@ module.exports = {
         const recordingPath = path.join(__dirname, 'recordings');
         const filename = path.join(recordingPath,  `${user.id}.mp3`);
         if (!fs.existsSync(filename)) {
-            return message.channel.send('Cannot find recording of user');
+            return message.reply('Cannot find recording of user');
         }
         const Player = createAudioPlayer();
         const channel = message.member.voice.channel;
@@ -33,11 +33,11 @@ module.exports = {
             });
       
             Player.play(resource);
-            message.channel.send({
+            message.reply({
               content: 'Playing Recording'
             });
            } catch (error) {
-            message.channel.send({ content: error.message || "Error" });
+            message.reply({ content: error.message || "Error" });
         }
         
           

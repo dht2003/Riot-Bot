@@ -28,7 +28,7 @@ module.exports = {
         /* If the bot is not in voice channel */
         if (!connection) {
             /* if user is not in any voice channel then return the error message */
-            if(!voiceChannel) return message.channel.send("You must be in a voice channel to use this command!")
+            if(!voiceChannel) return message.reply("You must be in a voice channel to use this command!")
 
             /* Join voice channel*/
             connection = joinVoiceChannel({
@@ -45,14 +45,14 @@ module.exports = {
 
             /* When user speaks in vc*/
             receiver.speaking.on('start', (userId) => {
-                createListeningStream(connection,receiver, message.client.users.cache.get(userId),userId,sentence_restriction);
+                createListeningStream(connection,receiver, member,userId,sentence_restriction);
             });
 
             /* Return success message */
-            return message.channel.send(`Chat restricting now}`);
+            return message.reply(`hat restricting ${member.user.username}`);
         }
         else if (connection) {
-            const msg = await message.channel.send("Already chat restricting a user")
+            const msg = message.reply("Already chat restricting a user")
         }
     }
 }
@@ -76,7 +76,7 @@ function createListeningStream(connection,receiver, user, userId, sentence_restr
     });
     sentence_count++;
     if (sentence_count >= sentence_restriction) {
-        console.log(`Muted ${user.id}`);
+        console.log(`Muted ${user.user.username}`);
         user.voice.setMute(true);
         connection.destroy();
     }
