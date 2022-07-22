@@ -9,7 +9,7 @@ const fs = require('fs');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const path = require('node:path');
 
-let sentence_count = 0
+let sentence_count;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -19,6 +19,7 @@ module.exports = {
     .addIntegerOption(option => option.setName('sentence_restriction').setDescription('Number of sentences that user can say').setRequired(true)),
     async execute(message) {
         const sentence_restriction = message.options.getInteger('sentence_restriction');
+        sentence_count = 0;
         const user = message.options.getUser('target');
         const member = message.guild.members.cache.get(user.id);
         const voiceChannel = member.voice.channel;
@@ -45,11 +46,11 @@ module.exports = {
 
             /* When user speaks in vc*/
             receiver.speaking.on('start', (userId) => {
-                createListeningStream(connection,receiver, member,userId,sentence_restriction);
+                createListeningStream(connection,message,receiver, member,userId,sentence_restriction);
             });
 
             /* Return success message */
-            return message.reply(`hat restricting ${member.user.username}`);
+            return message.reply(`Chat restricting ${member.user.username}`);
         }
         else if (connection) {
             const msg = message.reply("Already chat restricting a user")
@@ -58,7 +59,7 @@ module.exports = {
 }
 
 
-function createListeningStream(connection,receiver, user, userId, sentence_restriction) {
+function createListeningStream(connection,message,receiver, user, userId, sentence_restriction) {
     const opusStream = receiver.subscribe(userId, {
         end: {
             behavior: EndBehaviorType.AfterSilence,
@@ -78,6 +79,7 @@ function createListeningStream(connection,receiver, user, userId, sentence_restr
     if (sentence_count >= sentence_restriction) {
         console.log(`Muted ${user.user.username}`);
         user.voice.setMute(true);
+        message.client.voiceManager.delete(message.channel.guild.id)
         connection.destroy();
     }
     const recordingsPath = path.join(__dirname, 'recordings');
