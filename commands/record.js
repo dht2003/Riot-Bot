@@ -23,7 +23,7 @@ module.exports = {
         let connection = message.client.voiceManager.get(message.channel.guild.id)
         const recordingsPath = path.join(__dirname, 'recordings');
         if (!fs.existsSync(recordingsPath)) {
-            fs.mkdir(recordingsPath);
+            fs.mkdirSync(recordingsPath, { recursive: true });
         }
 
         /* If the bot is not in voice channel */
