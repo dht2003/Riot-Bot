@@ -21,6 +21,10 @@ module.exports = {
         const voiceChannel = member.voice.channel;
         /* Check if the bot is in voice channel */
         let connection = message.client.voiceManager.get(message.channel.guild.id)
+        const recordingsPath = path.join(__dirname, 'recordings');
+        if (!fs.existsSync(recordingsPath)) {
+            fs.mkdir(recordingsPath);
+        }
 
         /* If the bot is not in voice channel */
         if (!connection) {
@@ -60,7 +64,7 @@ module.exports = {
             /* Remove voice state from collection */
             message.client.voiceManager.delete(message.channel.guild.id)
             
-            const recordingsPath = path.join(__dirname, 'recordings');
+ 
             const filename = path.join(recordingsPath, `${user.id}`);
 
             /* Create ffmpeg command to convert pcm to mp3 */
