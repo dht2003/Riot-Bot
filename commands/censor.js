@@ -8,8 +8,8 @@ const path = require('node:path');
 
 module.exports = {
     data: new SlashCommandBuilder()
-    .setName('clown')
-    .setDescription('Clowns a user')
+    .setName('censor')
+    .setDescription('Censors a user')
     .addUserOption(option => option.setName('target').setDescription('Select a user').setRequired(true)),
     async execute(message) {
         const user = message.options.getUser('target');
@@ -19,7 +19,7 @@ module.exports = {
              return message.reply(`${member.user.username} is not in a voice channel`)
         }
         const audioDir = path.join(__dirname, 'audio');
-        const clownAudioFile = path.join(audioDir , 'clown_music.mp3')
+        const beepSoundPath = path.join(audioDir , 'beep_sound.mp3')
 
         const Player = createAudioPlayer();
         let connection = joinVoiceChannel({
@@ -30,14 +30,15 @@ module.exports = {
         });
         try {
             connection.subscribe(Player);
-            const resource = createAudioResource(clownAudioFile, {
-              inputType: StreamType.Arbitrary
-            });
-      
-            Player.play(resource);
             message.reply({
-              content: 'Clown!!!!'
+              content: `Censoring ${member.user.username}`
             });
+            connection.receiver.speaking.on('start',(userId) => {
+                let resource = createAudioResource(beepSoundPath, {
+                    inputType: StreamType.Arbitrary
+                });
+                Player.play(resource);
+            })
            } catch (error) {
             message.reply({ content: error.message || "Error" });
         }
