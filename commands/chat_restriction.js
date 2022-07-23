@@ -19,6 +19,7 @@ module.exports = {
     .addIntegerOption(option => option.setName('sentence_restriction').setDescription('Number of sentences that user can say').setRequired(true)),
     async execute(message) {
         const sentence_restriction = message.options.getInteger('sentence_restriction');
+        if (sentence_restriction <= 0) return message.reply("Enter a positive number");
         sentence_count = 0;
         const user = message.options.getUser('target');
         const member = message.guild.members.cache.get(user.id);
